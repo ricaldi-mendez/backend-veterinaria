@@ -15,9 +15,9 @@ const registrar = async (req, res) => {
   try {
     const veterinario = new Veterinario(req.body);
     const veterinarioGuardado = await veterinario.save();
-    res.json({ mgs: "registrando usuario ..." });
+    res.json({ msg: "Creado correctamente revisa tu email" });
   } catch (error) {
-    console.log(error);
+    return res.status(400).json({msg : 'se requiere datos como nombre , email y password'})
   }
 };
 

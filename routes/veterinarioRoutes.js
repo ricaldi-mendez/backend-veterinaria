@@ -12,9 +12,10 @@ import {
 import checkAuth from "../middlewares/authMiddleware.js";
 const router = express.Router();
 
-//--- api/veterinarios
+
 //area publica
-router.post("/", registrar);
+//--- api/veterinarios
+router.post("/registrar", registrar);
 router.get("/confirmar/:token", confirmar);
 router.post("/login", autenticar);
 
