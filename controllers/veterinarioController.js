@@ -1,10 +1,11 @@
 import Veterinario from "../models/Veterinario.js";
 import generarJWT from "../helpers/generarJWT.js";
 import generarID from "../helpers/generarID.js";
-
+import sendEmail from "../helpers/sendEmail.js";
+import emailOlvidePassword from "../helpers/emailOlvidePassword.js"
 const registrar = async (req, res) => {
   //evitar registro con email duplicados
-  const { email } = req.body;
+  const { email,nombre } = req.body;
   const findEmail = await Veterinario.findOne({ email });
   if (findEmail) {
     const error = new Error(`ya existe un usuario asociado a ${email}`);
@@ -15,7 +16,13 @@ const registrar = async (req, res) => {
   try {
     const veterinario = new Veterinario(req.body);
     const veterinarioGuardado = await veterinario.save();
-    res.json({ msg: "Creado correctamente revisa tu email" });
+
+    //enviar email 
+    sendEmail({nombre,
+      email,
+      token : veterinarioGuardado.token
+    })
+    return res.json({ msg: "Creado correctamente revisa tu email" });
   } catch (error) {
     return res.status(400).json({msg : 'se requiere datos como nombre , email y password'})
   }
@@ -26,17 +33,17 @@ const confirmar = async (req, res) => {
   const findToken = await Veterinario.findOne({ token });
 
   if (!findToken) {
-    return res.send(`el token no es valido `);
+    const error = new Error('el token no es valido');
+    return res.status(400).json({msg: error.message});
   }
-
   try {
     //validar token y confirmar cuenta
     findToken.token = null;
     findToken.confirmado = true;
     await findToken.save();
-    return res.json({ msg: "usuario confirmado" });
+    return res.status(200).json({ msg: "usuario confirmado" });
   } catch (error) {
-    console.log(error);
+    return res.json({msg: "hubo un error"})
   }
 };
 const perfil = (req, res) => {
@@ -81,22 +88,27 @@ const olvidePassword = async(req, res) => {
   
     //si olvido su password se verifica el email
     const {email} = req.body
-
     const usuarioVallido = await Veterinario.findOne({email})
 
     if(!usuarioVallido) {
         const error = new Error('No existe un usuario asociado a ese correo');
         return res.status(400).json({msg : error.message})
     }
-
     try {
 
         usuarioVallido.token = generarID()
         await usuarioVallido.save()
+        //enviar Email
+        emailOlvidePassword({
+          email,
+          token : usuarioVallido.token,
+          nombre: usuarioVallido.nombre
+        })
+
         return res.json({msg : "hemos enviado un email con las instrucciones"})
         
     } catch (error) {
-        console.log('error')
+      return res.json({msg: "hubo un error"})
     }
 };
 
